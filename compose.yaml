@@ -5,40 +5,49 @@ services:
         privileged: true
         restart: unless-stopped
         environment:
+            - PUID=1004
+            - PGID=1006
             - TZ=US/Mountain
         volumes:
-            - ./config:/config
+            - ./hass/config:/config
             - /run/dbus:/run/dbus:ro
         network_mode: host
         image: ghcr.io/home-assistant/home-assistant:stable
 
-#-------------------------------------          
-    openwakeword:  
-      image: homeassistant/amd64-addon-openwakeword:latest  
-      container_name: openwakeword  
-  
-      entrypoint: python3  
-      command: > 
-        -m wyoming_openwakeword  
-        --uri 'tcp://0.0.0.0:10400'  
-        --preload-model 'ok_nabu'
-        --debug  
-        --custom-model-dir /share/openwakeword  
-      ports:  
-        - 10400:10400  
-      environment:  
-        - TZ=US/Mountain
-      volumes:  
-        - ./openwakeword/data:/data  
-        - ./openwakeword/custom-model-dir:/share/openwakeword  
-      restart: unless-stopped  
+
 #-------------------------------------  
     piper:  
       image: homeassistant/amd64-addon-piper:latest  
       container_name: piper  
-  
+      environment:
+        - PUID=1004
+        - PGID=1006
+        - TZ=US/Mountain
       entrypoint: python3  
-      command: >  
+#      command:
+#        - "-m"
+#        - "wyoming_piper"
+#        - "--piper"
+#        - "/usr/share/piper/piper"
+#        - "--uri"
+#        - "tcp://0.0.0.0:10200"
+#        - "--length-scale"
+#        - "1"
+#        - "--noise-scale"
+#        - "0.667"
+#        - "--speaker"
+#        - "0"
+#        - "--voice"
+#        - "en_US-lessac-medium"
+#        - "--max-piper-procs'
+#        - "1"
+#        - "--data-dir"
+#        - "/data"
+#        - "--data-dir"
+#        - "/share/piper"
+#        - "--download-dir"
+#        - "/data"	
+      command: >		
         -m wyoming_piper  
         --piper '/usr/share/piper/piper'  
         --uri 'tcp://0.0.0.0:10200'  
@@ -60,7 +69,10 @@ services:
     whisper:  
       image: homeassistant/amd64-addon-whisper:latest  
       container_name: whisper  
-      
+      environment:
+          - PUID=1004
+          - PGID=1006
+          - TZ=US/Mountain     
       entrypoint: python3  
       command: >  
         -m wyoming_faster_whisper  
@@ -72,84 +84,75 @@ services:
         --download-dir /data  
       ports:  
         - "10300:10300"  
-      environment:  
-        - TZ=US/Mountain 
       volumes:  
         - ./whisper-data:/data  
       restart: unless-stopped
       
-     
-      
-#    playback:
-#      container_name: wyoming-snd-external
-#      build: https://github.com/rhasspy/wyoming-snd-external.git
-#      image: wyoming-snd-external
+##-------------------------------------          
+#    openwakeword:  
+#      image: homeassistant/amd64-addon-openwakeword:latest  
+#      container_name: openwakeword  
+#  
+#      entrypoint: python3  
+#      command: > 
+#        -m wyoming_openwakeword  
+#        --uri 'tcp://0.0.0.0:10400'  
+#        --preload-model 'ok_nabu'
+#        --debug  
+#        --custom-model-dir /share/openwakeword  
+#      ports:  
+#        - 10400:10400  
+#      environment:  
+#          - PUID=1004
+#          - PGID=1006
+#          - TZ=US/Mountain
+#      volumes:  
+#        - ./openwakeword/data:/data  
+#        - ./openwakeword/custom-model-dir:/share/openwakeword  
+#      restart: unless-stopped  
+#      
+##---------------------------------------- 
+#    smoochie-satellite:
+#      container_name: smoochie-satellite
+#      build: https://github.com/treysullivent/wyoming-satellite.git
+#      image: wyoming-satellite
+#      hostname: smoochie-satellite
 #      restart: unless-stopped
 #      ports:
-#        - "10601:10601"
-#      devices:
-#        - /dev/snd:/dev/snd
+#        - "10700:10700"      
 #      group_add:
 #        - audio
-#      depends_on:
-#        - satellite
-#      command: 
-#        - "--device"
-#        - "plughw:CARD=USB"
+#      env_file:
+#        - ./wyoming-satellite/.env        
+#      environment:
+#        - PULSE_SERVER=tcp:172.17.0.1:34567
+#        - PUID=1004
+#        - PGID=1006
+#        - TZ=US/Mountain 
+#      command:
+#        - "--name"
+#        - "smoochie-satellite"
+#        - "--uri"
+#        - "tcp://0.0.0.0:10700"
+#        - "--mic-command"
+#        - "parecord --property=media.role=phone --rate=16000 --channels=1 --format=s16le --raw --latency-msec 10"
+#        - "--snd-command"
+#        - "paplay --property=media.role=announce --rate=44100 --channels=1 --format=s16le --raw --latency-msec 10" 
+#        - "--snd-command-rate"
+#        - "44100"
+#        #- "--detection-command"
+#        #- "/home/<your_username>/wyoming-enhancements/snapcast/scripts/awake.sh"
+#        #- "--tts-stop-command"
+#        #- "/home/<your_username>/wyoming-enhancements/snapcast/scripts/done.sh"
 #        - "--debug"
-#        
-    microphone:
-      container_name: wyoming-mic-external
-      build: https://github.com/rhasspy/wyoming-mic-external.git
-      image: wyoming-mic-external
-      restart: unless-stopped
-      ports: 
-        - "10600:10600"
-      devices:
-        - /dev/snd:/dev/snd
-      group_add:
-        - audio
-      depends_on:
-        - satellite
-      command:
-        - "--device"
-        - "plughw:CARD=USB"
-        - "--debug"
-    
-
-        
-    satellite:
-      container_name: wyoming-satellite
-      build: https://github.com/treysullivent/wyoming-satellite.git
-      image: wyoming-satellite
-      #hostname: office
-      restart: unless-stopped
-      group_add:
-        - audio
-      ports:
-        - "10700:10700"
-      command:
-        - "--name"
-        - "smoochie-satellite"
-        - "--uri"
-        - "tcp://0.0.0.0:10700"
-        #- "--mic-command"
-        #- "arecord -r 16000 -c 1 -f S16_LE -t raw"
-        - "--mic-uri"
-        - "tcp://microphone:10600"
-        - "--snd-command"
-        - "aplay -D plughw:CARD=USB -r 22050 -c 1 -f S16_LE -t raw"        
-        #- "--snd-uri"
-        #- "tcp://playback:10601"
-        - "--debug"
-        - "--awake-wav"
-        - "sounds/awake.wav"
-        - "--done-wav"
-        - "sounds/done.wav"
-        - "--wake-uri"
-        - "tcp://openwakeword:10400"
-        - "--wake-word-name"
-        - "ok_nabu"        
-      devices:
-        - /dev/snd:/dev/snd        
- 
+#        - "--awake-wav"
+#        - "sounds/awake.wav"
+#        - "--done-wav"
+#        - "sounds/done.wav"
+#        - "--wake-uri"
+#        - "tcp://openwakeword:10400"
+#        - "--wake-word-name"
+#        - "ok_nabu"
+#    
+#
+# 
