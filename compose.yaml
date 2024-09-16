@@ -1,66 +1,201 @@
-version: "3"
-services:
-    home-assistant:
-        container_name: homeassistant
-        privileged: true
-        restart: unless-stopped
-        environment:
-            - PUID=1004
-            - PGID=1006
-            - TZ=US/Mountain
-        volumes:
-            - ./hass/config:/config
-            - /run/dbus:/run/dbus:ro
-        network_mode: host
-        image: ghcr.io/home-assistant/home-assistant:stable
-#-------------------------------------  
-    piper:  
-      image: homeassistant/amd64-addon-piper:latest  
-      container_name: piper  
-      environment:
-        - PUID=1004
-        - PGID=1006
-        - TZ=US/Mountain
-      entrypoint: python3  	
-      command: >		
-        -m wyoming_piper  
-        --piper '/usr/share/piper/piper'  
-        --uri 'tcp://0.0.0.0:10200'  
-        --length-scale "1"  
-        --noise-scale "0.667"  
-        --speaker "0"
-        --debug  
-        --voice en_US-lessac-medium
-        --max-piper-procs "1"  
-        --data-dir /data  
-        --data-dir /share/piper  
-        --download-dir /data  
-      ports:  
-        - "10200:10200"  
-      volumes:  
-        - ./piper-data:/data  
-      restart: unless-stopped  
-  
-#----------------------------------------  
-    whisper:  
-      image: homeassistant/amd64-addon-whisper:latest  
-      container_name: whisper  
-      environment:
-          - PUID=1004
-          - PGID=1006
-          - TZ=US/Mountain     
-      entrypoint: python3  
-      command: >  
-        -m wyoming_faster_whisper  
-        --uri tcp://0.0.0.0:10300  
-        --model small-int8  
-        --beam-size 1  
-        --language en  
-        --data-dir /data  
-        --download-dir /data  
-      ports:  
-        - "10300:10300"  
-      volumes:  
-        - ./whisper-data:/data  
-      restart: unless-stopped
+---
+x-general: &general
+  restart: unless-stopped
+  labels:
+    - autoheal=true
+    - "com.centurylinklabs.watchtower.enable=true"
+  env_file:
+    - path: default.env
+      required: true
 
+x-automation: &automation
+  environment:
+    - PUID=1004
+    - PGID=1006
+
+name: homeassistant
+
+services:
+
+  #-----------------------------------------
+  home-assistant:
+    <<: [ *general, *automation ]
+    container_name: homeassistant
+    hostname: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    privileged: true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ~/Docker/container-data/hass/config:/config
+      - /run/dbus:/run/dbus:ro
+    network_mode: host
+    healthcheck:
+      test: curl google.com || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  #-------------------------------------
+  openwakeword:
+    <<: [ *general ]
+
+    image: homeassistant/amd64-addon-openwakeword:latest
+    container_name: openwakeword
+    hostname: openwakeword
+    entrypoint: python3
+    command: >
+      -m wyoming_openwakeword   --uri 'tcp://0.0.0.0:10400' --preload-model 'ok nabu'   --debug   --custom-model-dir /share/openwakeword
+    ports:
+      - 10400:10400
+    environment:
+      - PUID=1004
+      - PGID=1006
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ~/Docker/container-data/hass/openwakeword/data:/data
+      - ~/Docker/container-data/smoochie-satellite/openwakeword/custom-model-dir:/share/openwakeword
+
+  #-------------------------------------  
+  piper:
+    <<: [ *general, *automation ]
+    image: homeassistant/amd64-addon-piper:latest
+    container_name: piper
+    entrypoint: python3
+    command: >
+      -m wyoming_piper    --piper '/usr/share/piper/piper'    --uri 'tcp://0.0.0.0:10200'    --length-scale "1"    --noise-scale "0.667"    --speaker "0"  --debug --voice en_US-lessac-medium  --max-piper-procs "1"    --data-dir /data    --data-dir /share/piper    --download-dir /data  
+    ports:
+      - "10200:10200"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ~/Docker/container-data/hass/piper:/data
+    healthcheck:
+      test: curl google.com || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #----------------------------------------  
+  faster-whisper:
+    <<: [ *general, *automation ]
+    image: lscr.io/linuxserver/faster-whisper:latest
+    container_name: faster-whisper
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WHISPER_MODEL=tiny-int8
+      - WHISPER_BEAM=1 #optional
+      - WHISPER_LANG=en #optional
+    volumes:
+      - ~/Docker/container-data/hass/whisper/data:/data
+      #- /path/to/data:/config
+    ports:
+      - 10300:10300
+
+  #----------------------------------------  
+  mosquitto:
+    <<: [ *general, *automation ]
+    container_name: mosquitto
+    stdin_open: true
+    tty: true
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ~/Docker/container-data/hass/mosquitto:/mosquitto
+    image: eclipse-mosquitto
+    #healthcheck:
+    #  test: curl http://localhost:8080 || exit 1
+    #  interval: 30s
+    #  timeout: 10s
+    #  retries: 3
+
+  #-----------------------------------------
+  esphome:
+    <<: [ *general, *automation ]
+    container_name: esphome
+    image: esphome/esphome
+    network_mode: host
+    #ports:
+    #  - 6052:6052
+    volumes:
+      - ~/Docker/container-data/hass/esphome/config:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  #-----------------------------------------
+  espresense-companion:
+    <<: [ *general, *automation ]
+    container_name: espresense-companion
+    image: espresense/espresense-companion
+    ports:
+      - 8267:8267
+    volumes:
+      - ~/Docker/container-data/hass/espresense:/config/espresense
+
+
+  #-----------------------------------------
+  zigbee2mqtt:
+    <<: [ *general, *automation ]
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt
+    ports:
+      # Frontend port
+      - 8022:8080
+    volumes:
+      - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  #-----------------------------------------
+  govee2mqtt:
+    <<: [ *general, *automation ]
+    image: ghcr.io/wez/govee2mqtt:latest
+    container_name: govee2mqtt
+    ports:
+      - 8056:8056
+    env_file:
+      - default.env
+      - govee.env
+
+  #-----------------------------------------
+  snapcast:
+    <<: [ *general, *automation ]
+    container_name: snapcast
+    image: docker.io/sweisgerber/snapcast:latest
+    hostname: snapcast
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000 # set to audio group ID
+      - TZ=US/Mountain
+      - START_SNAPCLIENT=false # set to `true` for snapclient to start
+      # --host: name or ip of compose service or dockerhost
+      # --soundcard: <ID> from `snapclient -l` from inside the container
+      # - SNAPCLIENT_OPTS=--host snapcast --soundcard <ID>
+      #   => Don't use quotes for SNAPCLIENT_OPTS="" !
+      # - HOST_AUDIO_GROUP=<AUDIO-GID> # set to GID of host audio group
+    #ports:
+    #  - 1704:1704
+    #  - 1705:1705
+    #  - 1780:1780
+    # devices:
+      # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
+    volumes:
+      - ~/Docker/container-data/snapcast/config/:/config/
+      - ~/Docker/container-data/snapcast/data/:/data/
+      # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
+      - /tmp/audio-fifos/:/audio/
+
+  #-----------------------------------------
+  music-assistant:
+    <<: [ *general, *automation ]
+    container_name: music-assistant
+    hostname: music_assistant
+    image: ghcr.io/music-assistant/server
+    #network_mode: host
+    ports:
+      - 8095:8095
+      - 8096:8096
+      - 8097:8097
+    volumes:
+      - ~/Docker/container-data/hass/music-assistant:/data
