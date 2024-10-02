@@ -34,6 +34,141 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - homepage.group=Automation
+      - homepage.name=HASS
+      - homepage.icon=home-assistant.png
+      - homepage.href=http://hass.trey.lol/
+      - homepage.description=Home Assistant server
+
+  #-----------------------------------------
+  music-assistant:
+    <<: [ *general, *automation ]
+    container_name: music-assistant
+    hostname: music_assistant
+    image: ghcr.io/music-assistant/server
+    #network_mode: host
+    ports:
+      - 8095:8095
+      - 8096:8096
+      - 8097:8097
+    volumes:
+      - ~/Docker/container-data/hass/music-assistant:/data
+    labels:
+      - homepage.group=Automation
+      - homepage.name=Music Assistant
+      #- homepage.icon=music-assistant.png
+      - homepage.href=http://music.trey.lol/
+      - homepage.description=Music Assistant server
+
+
+  #-----------------------------------------
+  esphome:
+    <<: [ *general, *automation ]
+    container_name: esphome
+    image: esphome/esphome
+    network_mode: host
+    #ports:
+    #  - 6052:6052
+    volumes:
+      - ~/Docker/container-data/hass/esphome/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - homepage.group=Automation
+      - homepage.name=ESPHome
+      - homepage.icon=esphome.png
+      - homepage.href=http://esp.trey.lol/
+      - homepage.description=ESPHome server
+
+  #-----------------------------------------
+  espresense-companion:
+    <<: [ *general, *automation ]
+    container_name: espresense-companion
+    image: espresense/espresense-companion
+    ports:
+      - 8267:8267
+    volumes:
+      - ~/Docker/container-data/hass/espresense:/config/espresense
+
+
+  #-----------------------------------------
+  zigbee2mqtt:
+    <<: [ *general, *automation ]
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt
+    ports:
+      # Frontend port
+      - 8022:8080
+    volumes:
+      - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - homepage.group=Automation
+      - homepage.name=Z2M
+      - homepage.icon=zigbee2mqtt.png
+      - homepage.href=http://z2m.trey.lol/
+      - homepage.description=Zigbee2MQTT server
+
+  #-----------------------------------------
+  govee2mqtt:
+    <<: [ *general, *automation ]
+    image: ghcr.io/wez/govee2mqtt:latest
+    container_name: govee2mqtt
+    ports:
+      - 8056:8056
+    env_file:
+      - default.env
+      - govee.env
+
+   #----------------------------------------  
+  mosquitto:
+    <<: [ *general, *automation ]
+    container_name: mosquitto
+    stdin_open: true
+    tty: true
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ~/Docker/container-data/hass/mosquitto:/mosquitto
+    image: eclipse-mosquitto
+    #healthcheck:
+    #  test: curl http://localhost:8080 || exit 1
+    #  interval: 30s
+    #  timeout: 10s
+    #  retries: 3
+
+  #-----------------------------------------
+  snapcast:
+    <<: [ *general, *automation ]
+    container_name: snapcast
+    image: docker.io/sweisgerber/snapcast:latest
+    hostname: snapcast
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000 # set to audio group ID
+      - TZ=US/Mountain
+      - START_SNAPCLIENT=false # set to `true` for snapclient to start
+      # --host: name or ip of compose service or dockerhost
+      # --soundcard: <ID> from `snapclient -l` from inside the container
+      # - SNAPCLIENT_OPTS=--host snapcast --soundcard <ID>
+      #   => Don't use quotes for SNAPCLIENT_OPTS="" !
+      # - HOST_AUDIO_GROUP=<AUDIO-GID> # set to GID of host audio group
+    #ports:
+    #  - 1704:1704
+    #  - 1705:1705
+    #  - 1780:1780
+    # devices:
+      # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
+    volumes:
+      - ~/Docker/container-data/snapcast/config/:/config/
+      - ~/Docker/container-data/snapcast/data/:/data/
+      # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
+      - /tmp/audio-fifos/:/audio/
+
   #-------------------------------------
   openwakeword:
     <<: [ *general ]
@@ -91,111 +226,6 @@ services:
     ports:
       - 10300:10300
 
-  #----------------------------------------  
-  mosquitto:
-    <<: [ *general, *automation ]
-    container_name: mosquitto
-    stdin_open: true
-    tty: true
-    ports:
-      - 1883:1883
-      - 9001:9001
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ~/Docker/container-data/hass/mosquitto:/mosquitto
-    image: eclipse-mosquitto
-    #healthcheck:
-    #  test: curl http://localhost:8080 || exit 1
-    #  interval: 30s
-    #  timeout: 10s
-    #  retries: 3
-
-  #-----------------------------------------
-  esphome:
-    <<: [ *general, *automation ]
-    container_name: esphome
-    image: esphome/esphome
-    network_mode: host
-    #ports:
-    #  - 6052:6052
-    volumes:
-      - ~/Docker/container-data/hass/esphome/config:/config
-      - /etc/localtime:/etc/localtime:ro
-
-  #-----------------------------------------
-  espresense-companion:
-    <<: [ *general, *automation ]
-    container_name: espresense-companion
-    image: espresense/espresense-companion
-    ports:
-      - 8267:8267
-    volumes:
-      - ~/Docker/container-data/hass/espresense:/config/espresense
+ 
 
 
-  #-----------------------------------------
-  zigbee2mqtt:
-    <<: [ *general, *automation ]
-    container_name: zigbee2mqtt
-    image: koenkk/zigbee2mqtt
-    ports:
-      # Frontend port
-      - 8022:8080
-    volumes:
-      - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
-      - /run/udev:/run/udev:ro
-      - /etc/localtime:/etc/localtime:ro
-
-  #-----------------------------------------
-  govee2mqtt:
-    <<: [ *general, *automation ]
-    image: ghcr.io/wez/govee2mqtt:latest
-    container_name: govee2mqtt
-    ports:
-      - 8056:8056
-    env_file:
-      - default.env
-      - govee.env
-
-  #-----------------------------------------
-  snapcast:
-    <<: [ *general, *automation ]
-    container_name: snapcast
-    image: docker.io/sweisgerber/snapcast:latest
-    hostname: snapcast
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000 # set to audio group ID
-      - TZ=US/Mountain
-      - START_SNAPCLIENT=false # set to `true` for snapclient to start
-      # --host: name or ip of compose service or dockerhost
-      # --soundcard: <ID> from `snapclient -l` from inside the container
-      # - SNAPCLIENT_OPTS=--host snapcast --soundcard <ID>
-      #   => Don't use quotes for SNAPCLIENT_OPTS="" !
-      # - HOST_AUDIO_GROUP=<AUDIO-GID> # set to GID of host audio group
-    #ports:
-    #  - 1704:1704
-    #  - 1705:1705
-    #  - 1780:1780
-    # devices:
-      # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
-    volumes:
-      - ~/Docker/container-data/snapcast/config/:/config/
-      - ~/Docker/container-data/snapcast/data/:/data/
-      # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
-      - /tmp/audio-fifos/:/audio/
-
-  #-----------------------------------------
-  music-assistant:
-    <<: [ *general, *automation ]
-    container_name: music-assistant
-    hostname: music_assistant
-    image: ghcr.io/music-assistant/server
-    #network_mode: host
-    ports:
-      - 8095:8095
-      - 8096:8096
-      - 8097:8097
-    volumes:
-      - ~/Docker/container-data/hass/music-assistant:/data
