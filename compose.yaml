@@ -16,17 +16,16 @@ x-automation: &automation
 name: homeassistant
 
 services:
-
   #-----------------------------------------
   home-assistant:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: homeassistant
     hostname: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
     privileged: true
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/Docker/container-data/hass/config:/config
+      - /mnt/disk3/DockerData/hass/config:/config
       - /run/dbus:/run/dbus:ro
     network_mode: host
     healthcheck:
@@ -34,16 +33,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - homepage.group=Automation
-      - homepage.name=HASS
-      - homepage.icon=home-assistant.png
-      - homepage.href=http://hass.trey.lol/
-      - homepage.description=Home Assistant server
 
   #-----------------------------------------
   music-assistant:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: music-assistant
     hostname: music_assistant
     image: ghcr.io/music-assistant/server
@@ -53,66 +46,46 @@ services:
       - 8096:8096
       - 8097:8097
     volumes:
-      - ~/Docker/container-data/hass/music-assistant:/data
-    labels:
-      - homepage.group=Automation
-      - homepage.name=Music Assistant
-      #- homepage.icon=music-assistant.png
-      - homepage.href=http://music.trey.lol/
-      - homepage.description=Music Assistant server
-
+      - /mnt/disk3/DockerData/music-assistant:/data
 
   #-----------------------------------------
   esphome:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: esphome
     image: esphome/esphome
     network_mode: host
     #ports:
     #  - 6052:6052
     volumes:
-      - ~/Docker/container-data/hass/esphome/config:/config
+      - /mnt/disk3/DockerData/esphome/config:/config
       - /etc/localtime:/etc/localtime:ro
-    labels:
-      - homepage.group=Automation
-      - homepage.name=ESPHome
-      - homepage.icon=esphome.png
-      - homepage.href=http://esp.trey.lol/
-      - homepage.description=ESPHome server
 
   #-----------------------------------------
   espresense-companion:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: espresense-companion
     image: espresense/espresense-companion
     ports:
       - 8267:8267
     volumes:
-      - ~/Docker/container-data/hass/espresense:/config/espresense
-
+      - /mnt/disk3/DockerData/espresense:/config/espresense
 
   #-----------------------------------------
   zigbee2mqtt:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: zigbee2mqtt
     image: koenkk/zigbee2mqtt
     ports:
       # Frontend port
       - 8022:8080
     volumes:
-      - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
+      - /mnt/disk3/DockerData/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
       - /etc/localtime:/etc/localtime:ro
-    labels:
-      - homepage.group=Automation
-      - homepage.name=Z2M
-      - homepage.icon=zigbee2mqtt.png
-      - homepage.href=http://z2m.trey.lol/
-      - homepage.description=Zigbee2MQTT server
 
   #-----------------------------------------
   govee2mqtt:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     image: ghcr.io/wez/govee2mqtt:latest
     container_name: govee2mqtt
     ports:
@@ -121,9 +94,9 @@ services:
       - default.env
       - govee.env
 
-   #----------------------------------------  
+    #----------------------------------------
   mosquitto:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: mosquitto
     stdin_open: true
     tty: true
@@ -132,7 +105,7 @@ services:
       - 9001:9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/Docker/container-data/hass/mosquitto:/mosquitto
+      - /mnt/disk3/DockerData/mosquitto:/mosquitto
     image: eclipse-mosquitto
     #healthcheck:
     #  test: curl http://localhost:8080 || exit 1
@@ -142,7 +115,7 @@ services:
 
   #-----------------------------------------
   snapcast:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     container_name: snapcast
     image: docker.io/sweisgerber/snapcast:latest
     hostname: snapcast
@@ -162,16 +135,16 @@ services:
     #  - 1705:1705
     #  - 1780:1780
     # devices:
-      # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
+    # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
     volumes:
-      - ~/Docker/container-data/snapcast/config/:/config/
-      - ~/Docker/container-data/snapcast/data/:/data/
+      - /mnt/disk3/DockerData/snapcast/config/:/config/
+      - /mnt/disk3/DockerData/snapcast/data/:/data/
       # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
       - /tmp/audio-fifos/:/audio/
 
   #-------------------------------------
   openwakeword:
-    <<: [ *general ]
+    <<: [*general]
 
     image: homeassistant/amd64-addon-openwakeword:latest
     container_name: openwakeword
@@ -186,31 +159,31 @@ services:
       - PGID=1006
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/Docker/container-data/hass/openwakeword/data:/data
-      - ~/Docker/container-data/smoochie-satellite/openwakeword/custom-model-dir:/share/openwakeword
+      - /mnt/disk3/DockerData/openwakeword/data:/data
+      - /mnt/disk3/DockerData/smoochie-satellite/openwakeword/custom-model-dir:/share/openwakeword
 
-  #-------------------------------------  
+  #-------------------------------------
   piper:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     image: homeassistant/amd64-addon-piper:latest
     container_name: piper
     entrypoint: python3
     command: >
-      -m wyoming_piper    --piper '/usr/share/piper/piper'    --uri 'tcp://0.0.0.0:10200'    --length-scale "1"    --noise-scale "0.667"    --speaker "0"  --debug --voice en_US-lessac-medium  --max-piper-procs "1"    --data-dir /data    --data-dir /share/piper    --download-dir /data  
+      -m wyoming_piper    --piper '/usr/share/piper/piper'    --uri 'tcp://0.0.0.0:10200'    --length-scale "1"    --noise-scale "0.667"    --speaker "0"  --debug --voice en_US-lessac-medium  --max-piper-procs "1"    --data-dir /data    --data-dir /share/piper    --download-dir /data
     ports:
       - "10200:10200"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/Docker/container-data/hass/piper:/data
+      - /mnt/disk3/DockerData/piper:/data
     healthcheck:
       test: curl google.com || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
 
-  #----------------------------------------  
+  #----------------------------------------
   faster-whisper:
-    <<: [ *general, *automation ]
+    <<: [*general, *automation]
     image: lscr.io/linuxserver/faster-whisper:latest
     container_name: faster-whisper
     environment:
@@ -221,11 +194,7 @@ services:
       - WHISPER_BEAM=1 #optional
       - WHISPER_LANG=en #optional
     volumes:
-      - ~/Docker/container-data/hass/whisper/data:/data
+      - /mnt/disk3/DockerData/whisper/data:/data
       #- /path/to/data:/config
     ports:
       - 10300:10300
-
- 
-
-
