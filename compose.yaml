@@ -79,7 +79,8 @@ services:
       # Frontend port
       - 8022:8080
     volumes:
-      - /mnt/disk3/DockerData/zigbee2mqtt:/app/data
+      - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
+      #- /mnt/disk3/DockerData/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
       - /etc/localtime:/etc/localtime:ro
 
