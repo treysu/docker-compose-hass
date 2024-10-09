@@ -9,9 +9,11 @@ x-general: &general
       required: true
 
 x-automation: &automation
+ # user: "1000:1000"
   environment:
-    - PUID=1004
-    - PGID=1006
+     - TEST=TEST # Unused
+  #  - PUID=1000
+  #  - PGID=1000
 
 name: homeassistant
 
@@ -25,7 +27,7 @@ services:
     privileged: true
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/disk3/DockerData/hass/config:/config
+      - /nfs/3/DockerData/hass/config:/config
       - /run/dbus:/run/dbus:ro
     network_mode: host
     healthcheck:
@@ -46,7 +48,7 @@ services:
       - 8096:8096
       - 8097:8097
     volumes:
-      - /mnt/disk3/DockerData/music-assistant:/data
+      - /nfs/3/DockerData/music-assistant:/data
 
   #-----------------------------------------
   esphome:
@@ -57,7 +59,7 @@ services:
     #ports:
     #  - 6052:6052
     volumes:
-      - /mnt/disk3/DockerData/esphome/config:/config
+      - /nfs/3/DockerData/esphome/config:/config
       - /etc/localtime:/etc/localtime:ro
 
   #-----------------------------------------
@@ -68,7 +70,7 @@ services:
     ports:
       - 8267:8267
     volumes:
-      - /mnt/disk3/DockerData/espresense:/config/espresense
+      - /nfs/3/DockerData/espresense:/config/espresense
 
   #-----------------------------------------
   zigbee2mqtt:
@@ -80,7 +82,6 @@ services:
       - 8022:8080
     volumes:
       - ~/Docker/container-data/hass/zigbee2mqtt:/app/data
-      #- /mnt/disk3/DockerData/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
       - /etc/localtime:/etc/localtime:ro
 
@@ -106,7 +107,7 @@ services:
       - 9001:9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/disk3/DockerData/mosquitto:/mosquitto
+      - /nfs/3/DockerData/mosquitto:/mosquitto
     image: eclipse-mosquitto
     #healthcheck:
     #  test: curl http://localhost:8080 || exit 1
@@ -138,8 +139,8 @@ services:
     # devices:
     # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
     volumes:
-      - /mnt/disk3/DockerData/snapcast/config/:/config/
-      - /mnt/disk3/DockerData/snapcast/data/:/data/
+      - /nfs/3/DockerData/snapcast/config/:/config/
+      - /nfs/3/DockerData/snapcast/data/:/data/
       # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
       - /tmp/audio-fifos/:/audio/
 
@@ -160,8 +161,8 @@ services:
       - PGID=1006
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/disk3/DockerData/openwakeword/data:/data
-      - /mnt/disk3/DockerData/smoochie-satellite/openwakeword/custom-model-dir:/share/openwakeword
+      - /nfs/3/DockerData/openwakeword/data:/data
+      - /nfs/3/DockerData/openwakeword/custom-model-dir:/share/openwakeword
 
   #-------------------------------------
   piper:
@@ -175,7 +176,7 @@ services:
       - "10200:10200"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/disk3/DockerData/piper:/data
+      - /nfs/3/DockerData/piper:/data
     healthcheck:
       test: curl google.com || exit 1
       interval: 30s
@@ -195,7 +196,6 @@ services:
       - WHISPER_BEAM=1 #optional
       - WHISPER_LANG=en #optional
     volumes:
-      - /mnt/disk3/DockerData/whisper/data:/data
-      #- /path/to/data:/config
+      - /nfs/3/DockerData/whisper/config:/config
     ports:
       - 10300:10300
