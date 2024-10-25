@@ -29,6 +29,7 @@ services:
   #-----------------------------------------
   home-assistant:
     <<: [*general, *healthcheck, *automation]
+    init: false
     container_name: homeassistant
     hostname: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
@@ -116,6 +117,7 @@ services:
   #-----------------------------------------
   snapcast:
     <<: [*general, *automation]
+    init: false
     container_name: snapcast
     image: docker.io/sweisgerber/snapcast:latest
     hostname: snapcast
@@ -179,6 +181,7 @@ services:
   #----------------------------------------
   faster-whisper:
     <<: [*general, *automation]
+    init: false
     image: lscr.io/linuxserver/faster-whisper:latest
     container_name: faster-whisper
     environment:
