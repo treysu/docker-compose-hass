@@ -1,26 +1,34 @@
 ---
 x-general: &general
+  init: true
   restart: unless-stopped
-  labels:
-    - autoheal=true
-    - "com.centurylinklabs.watchtower.enable=true"
   env_file:
     - path: default.env
-      required: true
+      required: false
+  labels:
+    - autoheal=true
+    - com.centurylinklabs.watchtower.enable=true
+
+x-healthcheck: &healthcheck
+  healthcheck:
+    test: curl google.com || exit 1
+    interval: 30s
+    timeout: 10s
+    retries: 3
 
 x-automation: &automation
- # user: "1000:1000"
   environment:
-     - TEST=TEST # Unused
-  #  - PUID=1000
-  #  - PGID=1000
+    - TEST=TEST # Unused
+    #- PUID=1000
+    #- PGID=1000
+  #user: "1000:1000"
 
 name: homeassistant
 
 services:
   #-----------------------------------------
   home-assistant:
-    <<: [*general, *automation]
+    <<: [*general, *healthcheck, *automation]
     container_name: homeassistant
     hostname: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
@@ -30,11 +38,6 @@ services:
       - /mnt/disk3/DockerData/hass/config:/config
       - /run/dbus:/run/dbus:ro
     network_mode: host
-    healthcheck:
-      test: curl google.com || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   #-----------------------------------------
   music-assistant:
@@ -109,11 +112,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /mnt/disk3/DockerData/mosquitto:/mosquitto
     image: eclipse-mosquitto
-    #healthcheck:
-    #  test: curl http://localhost:8080 || exit 1
-    #  interval: 30s
-    #  timeout: 10s
-    #  retries: 3
 
   #-----------------------------------------
   snapcast:
@@ -166,7 +164,7 @@ services:
 
   #-------------------------------------
   piper:
-    <<: [*general, *automation]
+    <<: [*general, *healthcheck, *automation]
     image: homeassistant/amd64-addon-piper:latest
     container_name: piper
     entrypoint: python3
@@ -177,11 +175,6 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /mnt/disk3/DockerData/piper:/data
-    healthcheck:
-      test: curl google.com || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   #----------------------------------------
   faster-whisper:
