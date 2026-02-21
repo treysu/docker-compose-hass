@@ -36,7 +36,7 @@ services:
     privileged: true
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/docker-data/hass/config:/config
+      - /data/appdata/hass/config:/config
       - /run/dbus:/run/dbus:ro
     network_mode: host
 
@@ -52,7 +52,7 @@ services:
       - 8096:8096
       - 8097:8097
     volumes:
-      - /mnt/docker-data/music-assistant:/data
+      - /data/appdata/music-assistant:/data
 
   #-----------------------------------------
   esphome:
@@ -63,7 +63,7 @@ services:
     #ports:
     #  - 6052:6052
     volumes:
-      - /mnt/docker-data/esphome/config:/config
+      - /data/appdata/esphome/config:/config
       - /etc/localtime:/etc/localtime:ro
 
   #-----------------------------------------
@@ -74,7 +74,7 @@ services:
     ports:
       - 8267:8267
     volumes:
-      - /mnt/docker-data/espresense:/config/espresense
+      - /data/appdata/espresense:/config/espresense
 
   #-----------------------------------------
   zigbee2mqtt:
@@ -84,8 +84,10 @@ services:
     ports:
       # Frontend port
       - 8022:8080
+    environment:
+      - TINI_SUBREAPER=true
     volumes:
-      - /mnt/docker-data/zigbee2mqtt:/app/data
+      - /data/appdata/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
       - /etc/localtime:/etc/localtime:ro
 
@@ -111,7 +113,7 @@ services:
       - 9001:9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/docker-data/mosquitto:/mosquitto
+      - /data/appdata/mosquitto:/mosquitto
     image: eclipse-mosquitto
 
   #-----------------------------------------
@@ -139,8 +141,8 @@ services:
     # devices:
     # - /dev/snd:/dev/snd # optional, only if you want to use snapclient
     volumes:
-      - /mnt/docker-data/snapcast/config/:/config/
-      - /mnt/docker-data/snapcast/data/:/data/
+      - /data/appdata/snapcast/config/:/config/
+      - /data/appdata/snapcast/data/:/data/
       # /audio should get used to place FIFOs for audio playback from mpd/mopidy/host/etc
       - /tmp/audio-fifos/:/audio/
 
@@ -161,8 +163,8 @@ services:
       - PGID=1006
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/docker-data/openwakeword/data:/data
-      - /mnt/docker-data/openwakeword/custom-model-dir:/share/openwakeword
+      - /data/appdata/openwakeword/data:/data
+      - /data/appdata/openwakeword/custom-model-dir:/share/openwakeword
 
   #-------------------------------------
   piper:
@@ -176,7 +178,7 @@ services:
       - "10200:10200"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/docker-data/piper:/data
+      - /data/appdata/piper:/data
 
   #----------------------------------------
   faster-whisper:
@@ -192,6 +194,6 @@ services:
       - WHISPER_BEAM=1 #optional
       - WHISPER_LANG=en #optional
     volumes:
-      - /mnt/docker-data/whisper/config:/config
+      - /data/appdata/whisper/config:/config
     ports:
       - 10300:10300
